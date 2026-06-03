@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import Booking from './pages/Booking';
 import PrivateRoute from './components/PrivateRoute';
 import Dashboard      from './pages/Dashboard';
 import Citas          from './pages/Citas';
@@ -87,6 +88,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/book/:clienteId"  element={<Booking />} />
           <Route path="/*" element={
             <PrivateRoute>
               <Layout />
