@@ -6,7 +6,7 @@ services:
     container_name: qcalendar_api
     restart: always
     ports:
-      - "8001:8001"
+      - "8003:8001"
     environment:
       DATABASE_URL: postgresql://qcalendar_user:qcal2026secure@siscont_db:5432/qcalendar
       SECRET_KEY: qsd2026secretkey
@@ -25,7 +25,7 @@ services:
     container_name: qcalendar_frontend
     restart: always
     ports:
-      - "3001:80"
+      - "3003:80"
     networks:
       - siscont-erp_default
 
