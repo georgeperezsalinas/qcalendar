@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+import os
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from datetime import date, timedelta
 from typing import List, Optional
 import models, schemas
@@ -7,6 +9,7 @@ from database import get_db
 import secrets
 
 router = APIRouter(prefix="/citas", tags=["citas"])
+QCAL_API_KEY = os.getenv("QCAL_API_KEY", "")
 
 @router.post("/", response_model=schemas.CitaOut)
 def crear_cita(
@@ -135,3 +138,56 @@ def completar_cita(cita_id: int, db: Session = Depends(get_db)):
     cita.estado = 'completada'
     db.commit()
     return {"message": "Cita completada"}
+
+
+
+
+def _autorizado(cita: models.Cita, token: Optional[str], api_key: Optional[str]) -> bool:
+    """Autoriza por token de cancelación (dashboard/público)
+    o por API key interna (bot de WhatsApp)."""
+    if api_key and QCAL_API_KEY and api_key == QCAL_API_KEY:
+        return True
+    if token and cita.token_cancelar and token == cita.token_cancelar:
+        return True
+    return False
+
+
+@router.patch("/{cita_id}/cancelar")
+def cancelar_cita(
+    cita_id: int,
+    token: Optional[str] = None,
+    x_api_key: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+):
+    cita = db.query(models.Cita).filter(models.Cita.id == cita_id).first()
+    if not cita:
+        raise HTTPException(status_code=404, detail="Cita no encontrada")
+
+    if not _autorizado(cita, token, x_api_key):
+        raise HTTPException(status_code=403, detail="No autorizado para cancelar esta cita")
+
+    if cita.estado == "cancelada":
+        return {"id": cita.id, "estado": cita.estado, "mensaje": "La cita ya estaba cancelada"}
+
+    cita.estado = "cancelada"
+    cita.fecha_update = func.now()
+    db.commit()
+    db.refresh(cita)
+    return {"id": cita.id, "estado": cita.estado, "fecha": str(cita.fecha), "hora_inicio": str(cita.hora_inicio)}
+
+
+@router.patch("/{cita_id}/completar")
+def completar_cita(
+    cita_id: int,
+    x_api_key: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
+):
+    cita = db.query(models.Cita).filter(models.Cita.id == cita_id).first()
+    if not cita:
+        raise HTTPException(status_code=404, detail="Cita no encontrada")
+
+    cita.estado = "completada"
+    cita.fecha_update = func.now()
+    db.commit()
+    db.refresh(cita)
+    return {"id": cita.id, "estado": cita.estado}
