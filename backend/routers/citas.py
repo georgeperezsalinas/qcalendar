@@ -102,27 +102,27 @@ def citas_hoy(cliente_id: int, db: Session = Depends(get_db)):
     ).order_by(models.Cita.hora_inicio).all()
 
 
-@router.patch("/{cita_id}/cancelar")
-def cancelar_cita(
-    cita_id: int,
-    token: str,
-    db: Session = Depends(get_db)
-):
-    """Cancela una cita por token"""
-    cita = db.query(models.Cita).filter(
-        models.Cita.id == cita_id,
-        models.Cita.token_cancelar == token
-    ).first()
+# @router.patch("/{cita_id}/cancelar")
+# def cancelar_cita(
+#     cita_id: int,
+#     token: str,
+#     db: Session = Depends(get_db)
+# ):
+#     """Cancela una cita por token"""
+#     cita = db.query(models.Cita).filter(
+#         models.Cita.id == cita_id,
+#         models.Cita.token_cancelar == token
+#     ).first()
 
-    if not cita:
-        raise HTTPException(status_code=404, detail="Cita no encontrada")
+#     if not cita:
+#         raise HTTPException(status_code=404, detail="Cita no encontrada")
 
-    if cita.estado == 'cancelada':
-        raise HTTPException(status_code=400, detail="La cita ya está cancelada")
+#     if cita.estado == 'cancelada':
+#         raise HTTPException(status_code=400, detail="La cita ya está cancelada")
 
-    cita.estado = 'cancelada'
-    db.commit()
-    return {"message": "Cita cancelada exitosamente"}
+#     cita.estado = 'cancelada'
+#     db.commit()
+#     return {"message": "Cita cancelada exitosamente"}
 
 
 @router.patch("/{cita_id}/completar")
